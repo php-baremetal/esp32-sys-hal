@@ -1,0 +1,32 @@
+{
+    "name": "php-baremetal/esp32-sys-hal",
+    "description": "ESP32 sys HAL for ext-sys: timing, restart, light and deep sleep, reset reason, chip info, memory.",
+    "type": "bm-hal",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gianfrancesco Aurecchia",
+            "email": "gianfri@aurecchia.com"
+        }
+    ],
+    "require": {
+        "php-baremetal/esp32-executor": "^1.0"
+    },
+    "provide": {
+        "php-baremetal/sys-hal": "1.0.0"
+    },
+    "extra": {
+        "baremetal": {
+            "platform": "esp32",
+            "idf-requires": [
+                "heap",
+                "esp_timer",
+                "esp_system",
+                "esp_hw_support",
+                "esp_driver_gpio",
+                "freertos",
+                "phpbm"
+            ]
+        }
+    }
+}
