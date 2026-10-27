@@ -19,7 +19,7 @@ wake cause. It therefore only builds inside a phpbm project.
 ## Install
 
 You do not require it. ext-sys requires the virtual `php-baremetal/sys-hal`, and conductor adds this package
-(and esp32-executor with it) when the project's SDK is on the `esp32` platform (`"sdk": "esp32@^1.0"`). Require
+(and esp32-executor with it) when the project's SDK is on the `esp32` platform (`"sdk": "esp32@^2.0"`). Require
 the extension:
 
 ```bash
