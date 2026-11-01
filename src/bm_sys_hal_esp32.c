@@ -86,14 +86,24 @@ typedef struct {
 static esp_err_t light_sleep_run(void *arg)
 {
     light_sleep_t *op = arg;
-    op->cause = "other";
+    op->cause = "none";   /* until the chip has slept */
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     if (op->ms > 0) {
         esp_sleep_enable_timer_wakeup((uint64_t) op->ms * 1000);
     }
     bool pin_set = false;
     if (op->pin >= 0) {
-        pin_set = gpio_wakeup_enable((gpio_num_t) op->pin, op->wake_low ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) == ESP_OK
+        /* An input with the opposite pull, so an unconnected pin does not wake the chip. gpio_config() also
+         * takes the pin back from the RTC domain, where a deep-sleep wake pin is left after the wake. */
+        gpio_config_t io = {
+            .pin_bit_mask = 1ULL << op->pin,
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = op->wake_low ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
+            .pull_down_en = op->wake_low ? GPIO_PULLDOWN_DISABLE : GPIO_PULLDOWN_ENABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        pin_set = gpio_config(&io) == ESP_OK
+                  && gpio_wakeup_enable((gpio_num_t) op->pin, op->wake_low ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL) == ESP_OK
                   && esp_sleep_enable_gpio_wakeup() == ESP_OK;
     }
     if (esp_light_sleep_start() == ESP_OK) {
@@ -102,6 +112,8 @@ static esp_err_t light_sleep_run(void *arg)
             op->cause = "gpio";
         } else if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
             op->cause = "timer";
+        } else {
+            op->cause = "other";
         }
     } else if (pin_set && gpio_get_level((gpio_num_t) op->pin) == (op->wake_low ? 0 : 1)) {
         op->cause = "gpio";
@@ -115,8 +127,10 @@ static esp_err_t light_sleep_run(void *arg)
 
 const char *bm_sys_hal_light_sleep(int64_t ms, int pin, bool wake_low)
 {
-    light_sleep_t op = { .ms = ms, .pin = pin, .wake_low = wake_low, .cause = "other" };
-    executor_run_sync(light_sleep_run, &op, 1000);
+    light_sleep_t op = { .ms = ms, .pin = pin, .wake_low = wake_low, .cause = "none" };
+    if (executor_run_sync(light_sleep_run, &op, 1000) != ESP_OK) {
+        return "none";   /* the executor queue stayed full, or the task could not start: no sleep */
+    }
     return op.cause;
 }
 

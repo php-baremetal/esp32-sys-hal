@@ -51,8 +51,8 @@ What users notice:
   down and the storage is unmounted; light sleep runs on the executor task, because entering it suspends the
   cache and the PHP task's stack is in PSRAM.
 - **Light sleep blocks the executor** for its whole duration (background I2C samplers, NVS writes, `Bus::CORE1`
-  buses wait). The call waits at most 1000 ms for a free slot in the executor queue; if none frees up, it returns
-  `"other"` without sleeping.
+  buses wait). The call waits at most 1000 ms for a free slot in the executor queue; if none frees up, or the chip refuses
+  to sleep, it returns `"none"` without sleeping (1.0.1 and earlier returned `"other"`).
 - **Wake pins.** Deep sleep accepts only pins `esp_sleep_is_valid_wakeup_gpio()` accepts: RTC GPIOs on ESP32-S3,
   LP GPIOs on ESP32-P4. The pin gets the opposite pull during the sleep. Light sleep accepts any valid GPIO and
   returns `"gpio"` at once if the pin is already at the wake level.
