@@ -14,6 +14,7 @@
 /* ESP32 sys HAL for ext-sys: restart and deep sleep go through the host's stop (phpbm.h). */
 #include <stdio.h>
 #include "bm_sys_hal.h"
+#include "bm_sys_largest.h"
 #include "phpbm.h"
 #include "executor.h"
 #include "sdkconfig.h"
@@ -194,4 +195,26 @@ static uint32_t cap_of(bm_sys_mem_t which)
 }
 size_t bm_sys_hal_mem_free(bm_sys_mem_t which)    { return heap_caps_get_free_size(cap_of(which)); }
 size_t bm_sys_hal_mem_total(bm_sys_mem_t which)   { return heap_caps_get_total_size(cap_of(which)); }
-size_t bm_sys_hal_mem_largest(bm_sys_mem_t which) { return heap_caps_get_largest_free_block(cap_of(which)); }
+
+/* heap_caps_get_largest_free_block() walks the heap with the interrupts off (7-17 ms on 8 MB of PSRAM, enough to
+ * break an RGB panel's refills): find the same size by short malloc/free tries instead. */
+static bool try_alloc_free(size_t size, void *ctx)
+{
+    void *p = heap_caps_malloc(size, *(uint32_t *) ctx);
+    if (p == NULL) {
+        return false;
+    }
+    heap_caps_free(p);
+    return true;
+}
+
+size_t bm_sys_hal_mem_largest(bm_sys_mem_t which)
+{
+    uint32_t caps = cap_of(which);
+#ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
+    /* A failed try would abort. */
+    return heap_caps_get_largest_free_block(caps);
+#else
+    return bm_sys_largest_search(heap_caps_get_free_size(caps), try_alloc_free, &caps);
+#endif
+}

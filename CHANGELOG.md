@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3
+
+- Fixed: `bm_sys_hal_mem_largest()` (`sys_psram_largest_free()`) walked every block of the
+  heap with the heap lock held and the interrupts of the calling core off for 7-17 ms on 8 MB of PSRAM. An RGB
+  panel whose interrupt runs on that core lost its refills, and the picture rolled when a program read the largest
+  free PSRAM block. It now finds the size with a short search of allocate-and-free tries, each holding the lock
+  for microseconds, so interrupts are no longer held off for milliseconds. The value is the same.
+
 ## 1.0.2
 
 - Fixed: `bm_sys_hal_light_sleep()` with a wake pin set no pull on it, so a pin with nothing connected floated

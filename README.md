@@ -43,7 +43,7 @@ The functions are documented in [ext-sys](package:php-baremetal/ext-sys#docs/ove
 | `sys_cpu_freq_mhz()` | `CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` |
 | `sys_mac()` | `esp_read_mac()`, Wi-Fi station address |
 | `sys_idf_version()` | `esp_get_idf_version()` |
-| memory functions | `heap_caps_get_free_size()`, `heap_caps_get_total_size()`, `heap_caps_get_largest_free_block()` on `MALLOC_CAP_INTERNAL` or `MALLOC_CAP_SPIRAM` |
+| memory functions | `heap_caps_get_free_size()`, `heap_caps_get_total_size()`, `heap_caps_malloc()`/`heap_caps_free()` tries for the largest block, on `MALLOC_CAP_INTERNAL` or `MALLOC_CAP_SPIRAM` |
 
 What users notice:
 
